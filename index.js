@@ -1,12 +1,15 @@
 // run "npm install . "
+// reset counter/totalPost to 0
+// remove all the documents in the posts
 
-const MongoClient = require('mongodb').MongoClient;
+const {MongoClient} = require('mongodb');
 
 const uri = require('./db.js');
 var db;
 
 const DATABASE = 'todoapp'; 
-const COLLECTION = 'posts'
+const POSTS = 'posts';
+const COUNTER = 'counter';
 
 MongoClient.connect(uri, { useUnifiedTopology: true }, function (error, client) {
     if (error) return console.log(error)
@@ -20,27 +23,58 @@ const bodyParser= require('body-parser')
 
 app.use(bodyParser.urlencoded({extended: true})) 
 app.use(express.urlencoded({extended: true})) 
-
-// callback functions
+app.set('view engine', 'ejs');
 
 app.listen(5500, function() {
     console.log('listening on 5500')
 });
 
 app.get('/', function(req, resp) { 
-    resp.sendFile(__dirname +'/write.html')
-});
-
-app.post('/add', async function(req, resp) {
-    console.log(req.body);
-    resp.send('Sent');
     try {
-      // Connect the client to the server (optional starting in v4.7)
-      const posts = db.collection(`${COLLECTION}`);
-  
-      const query = { title : req.body.title, date : req.body.date }
-      await posts.insertOne(query);
+      resp.render('write.ejs')
     } catch (e) {
       console.error(e);
     } 
 });
+
+app.post('/add', function(req, resp) {
+    runAddPost(req, resp);
+});
+
+async function runAddPost(req, resp) {
+    try {
+      const counter = db.collection(COUNTER);
+      const posts = db.collection(POSTS);      
+  
+      let query = {name : 'Total Post'};
+      let res = await counter.findOne(query);
+      console.log(res);
+      const totalPost = res.totalPost;
+
+      query = { _id : totalPost + 1, title : req.body.title, date : req.body.date};
+      res = await posts.insertOne(query);
+      
+      query = {name : 'Total Post'};
+      let stage = { $inc: {totalPost:1} };
+      await counter.updateOne(query, stage);
+      resp.send('Stored to Mongodb OK');
+    } catch (e) {
+      console.error(e);
+    }
+}
+
+
+app.get('/list', function(req, resp){
+  runListGet(req, resp);
+});
+
+async function runListGet(req, resp) {
+    try {
+      const posts = db.collection(POSTS);
+      const res = await posts.find().toArray();
+      const query = { posts: res };
+      resp.render('list.ejs', query)
+    } catch (e) {
+      console.error(e);
+    } 
+}
