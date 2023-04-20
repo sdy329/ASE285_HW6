@@ -15,18 +15,18 @@
 
 <body>
   <%- include('nav.ejs') %>
-
-    <h4 class="container mt-4"><strong>Write Page</strong></h4>
+    <h4 class="container mt-4"><strong>Edit Page</strong></h4>
 
     <div class="container mt-3">
-      <form action="/add" method="POST">
+      <form action="/edit?_method=PUT" method="POST">
+        <input value="<%= data._id %>" name="id" style="display : none">
         <div class="form-group">
-          <label>What to do today</label>
-          <input type="text" class="form-control" name="title" />
+          <label>Update: What to do today</label>
+          <input type="text" class="form-control" name="title" value=<%=data.title %> />
         </div>
         <div class="form-group">
-          <label>Date</label>
-          <input type="text" class="form-control" name="date" />
+          <label>Update: Date</label>
+          <input type="text" class="form-control" name="date" value=<%=data.date %> />
         </div>
         <button type="submit" class="btn btn-outline-secondary">Submit</button>
       </form>
