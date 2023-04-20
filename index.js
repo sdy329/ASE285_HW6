@@ -1,38 +1,46 @@
-// npm install -g nodemon
-// inpm install . 
-// npm start
+// run "npm install . "
 
-const {MongoClient} = require("mongodb");
+const MongoClient = require('mongodb').MongoClient;
 
 const uri = require('./db.js');
+var db;
+
 const DATABASE = 'todoapp'; 
 const COLLECTION = 'posts'
 
-const client = new MongoClient(uri);
-async function run() {
-  try {
-    // Be sure there is no {name : 'John', age : 10} in the database.
-    await client.connect();
-    const database = client.db(DATABASE);
-    const posts = database.collection(COLLECTION);
-    const query = {name : 'John', age : 10} ;
-    await posts.insertOne(query);
-  } catch (e) {
-    console.error(e);
-  } finally {
-    // Ensures that the client will close when you finish/error
-    await client.close();
-  }
-}
-run().catch(console.dir);
+MongoClient.connect(uri, { useUnifiedTopology: true }, function (error, client) {
+    if (error) return console.log(error)
+    db = client.db(DATABASE);
+});
 
-/*
-MongoClient.connect(uri).then(
-  client => runApp(client)
-)
-function runApp(client) {
-  client.db(DATABASE).collection(COLLECTION).insertOne(query).then(
-    results => console.log(results)
-  );
-}
-*/
+// Install express
+const express = require('express');
+const app = express();
+const bodyParser= require('body-parser')
+
+app.use(bodyParser.urlencoded({extended: true})) 
+app.use(express.urlencoded({extended: true})) 
+
+// callback functions
+
+app.listen(5500, function() {
+    console.log('listening on 5500')
+});
+
+app.get('/', function(req, resp) { 
+    resp.sendFile(__dirname +'/write.html')
+});
+
+app.post('/add', async function(req, resp) {
+    console.log(req.body);
+    resp.send('Sent');
+    try {
+      // Connect the client to the server (optional starting in v4.7)
+      const posts = db.collection(`${COLLECTION}`);
+  
+      const query = { title : req.body.title, date : req.body.date }
+      await posts.insertOne(query);
+    } catch (e) {
+      console.error(e);
+    } 
+});
