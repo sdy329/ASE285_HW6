@@ -30,11 +30,11 @@ app.listen(5500, function() {
 });
 
 app.get('/', function(req, resp) { 
-    try {
-      resp.render('write.ejs')
-    } catch (e) {
-      console.error(e);
-    } 
+  try {
+    resp.render('write.ejs')
+  } catch (e) {
+    console.error(e);
+  } 
 });
 
 app.post('/add', function(req, resp) {
@@ -78,3 +78,23 @@ async function runListGet(req, resp) {
       console.error(e);
     } 
 }
+
+app.delete('/delete', async function(req, resp){
+    req.body._id = parseInt(req.body._id); // the body._id is stored in string, so change it into an int value
+    console.log(req.body._id);
+    try {
+        const counter = db.collection(COUNTER);
+        const posts = db.collection(POSTS)
+        const res = await posts.deleteOne(req.body); 
+
+        const query = {name : 'Total Post'};
+        const stage = { $inc: {totalPost:-1} };
+        await counter.updateOne(query, stage);
+
+        console.log('Delete complete')
+        resp.send('Delete complete')
+    }
+    catch (e) {
+        console.error(e);
+    } 
+}); 
